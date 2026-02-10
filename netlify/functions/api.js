@@ -7,8 +7,8 @@ const router = express.Router();
 
 // Get these from your Supabase Dashboard
 const supabase = createClient(
-  process.env.https://donetvmwpxlxqkzrnsvu.supabase.co, 
-  process.env.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvbmV0dm13cHhseHFrenJuc3Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MjU3NDgsImV4cCI6MjA4NjMwMTc0OH0.XvPZy5DMaDYjWphDWf2DYYXr-WbMWnc1hGCljMqe_JI
+  process.env.SUPABASE_URL, 
+  process.env.SUPABASE_ANON_KEY
 );
 
 app.use(express.json());
