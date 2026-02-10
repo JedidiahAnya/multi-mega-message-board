@@ -11,73 +11,68 @@
         input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; }
     </style>
-
-    <script src="https://cdn.jsdelivr.net"></script>
 </head>
 <body>
-    <h2>Multi-Mega Messenger</h2>
-    <div id="board">Loading messages...</div>
-    <input type="text" id="userInput" placeholder="Your Name">
-    <input type="text" id="textInput" placeholder="Write a message...">
-    <button onclick="sendMessage()">Post Message</button>
+    <h2>Multi-Mega Message Board</h2>
+    <div id="setup" style="display:none;">
+        <p>Pick a unique username to start:</p>
+        <input type="text" id="newName" placeholder="Your Name">
+        <button onclick="saveName()">Start Chatting</button>
+    </div>
 
-    <div id="auth-section">
-      <input type="email" id="email" placeholder="Email">
-      <input type="password" id="password" placeholder="Password">
-      <input type="text" id="username" placeholder="Pick a Username">
-      <button onclick="signUp()">Register</button>
-      <button onclick="logIn()">Login</button>
+    <div id="chat" style="display:none;">
+        <p>Logged in as: <strong id="currentName"></strong></p>
+        <div id="board">Loading...</div>
+        <input type="text" id="textInput" placeholder="Write a message...">
+        <button onclick="sendMessage()">Post</button>
     </div>
 
     <script>
+        const myName = localStorage.getItem('chat-username');
+
+        if (!myName) {
+            document.getElementById('setup').style.display = 'block';
+        } else {
+            document.getElementById('chat').style.display = 'block';
+            document.getElementById('currentName').innerText = myName;
+            loadMessages();
+        }
+
+        function saveName() {
+            const name = document.getElementById('newName').value.trim();
+            if (name) {
+                localStorage.setItem('chat-username', name);
+                location.reload();
+            }
+        }
+
         async function loadMessages() {
             const res = await fetch('/api/messages');
             const messages = await res.json();
             document.getElementById('board').innerHTML = messages.map(m => `
-                <div class="msg"><span class="user">${m.user}:</span> ${m.text}</div>
+                <div class="msg"><span class="user">${m.username}:</span> ${m.text}</div>
             `).join('');
         }
 
         async function sendMessage() {
-            const user = document.getElementById('userInput').value || "Guest";
             const text = document.getElementById('textInput').value;
             if(!text) return;
 
-            await fetch('/api/messages', {
+            const res = await fetch('/api/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user, text })
+                body: JSON.stringify({ username: myName, text: text })
             });
 
-            document.getElementById('textInput').value = '';
-            loadMessages();
+            if (res.status === 400) {
+                alert("That name is already taken by someone else! Please clear your browser data and try a new name.");
+            } else {
+                document.getElementById('textInput').value = '';
+                loadMessages();
+            }
         }
 
         setInterval(loadMessages, 5000);
-        loadMessages();
-
-        async function signUp() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const username = document.getElementById('username').value;
-
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) return alert(error.message);
-
-  // Create the profile
-  await supabase.from('profiles').insert([{ id: data.user.id, username }]);
-  alert("Check your email for a confirmation link!");
-}
-
-async function logIn() {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: document.getElementById('email').value,
-    password: document.getElementById('password').value
-  });
-  if (error) return alert(error.message);
-  localStorage.setItem('sb-token', data.session.access_token);
-  location.reload(); // Refresh to show the post box
-}
     </script>
 </body>
 </html>
